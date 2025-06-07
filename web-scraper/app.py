@@ -3,11 +3,15 @@ from scheduler import SchedulerService
 from producers.kafka_producer_service import KafkaProducerService
 from data_sources.earthquake_source import EarthquakeSource
 from jobs.earthquake_job import make_earthquake_job
+import os
 
 app = Flask(__name__)
 
+bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+print("env"+bootstrap_servers)
 kafka_producer_service = KafkaProducerService(
-    bootstrap_servers="localhost:9094")
+    bootstrap_servers=bootstrap_servers)
+
 scheduler_service = SchedulerService()
 
 earthquake_source = EarthquakeSource()
