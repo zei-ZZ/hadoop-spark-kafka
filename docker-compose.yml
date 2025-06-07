@@ -1,4 +1,18 @@
+name: big_data_project
 services:
+  web_scraper:
+    container_name: web_scraper
+    build:
+      context: ./web-scraper
+    ports:
+      - "5000:5000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - hadoop
+
   kafka:
     image: bitnami/kafka:3.5
     container_name: kafka
