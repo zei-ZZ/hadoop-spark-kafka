@@ -69,6 +69,19 @@ services:
     networks:
       - hadoop
 
+  spark-worker:
+    image: bitnami/spark:3.4
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    ports:
+      - "8081:8081"
+    networks:
+      - hadoop
+    depends_on:
+      - spark-master
+
   spark-stream-jobs:
     container_name: spark-stream-jobs
     image: bitnami/spark:3.4
@@ -89,32 +102,32 @@ services:
     image: bitnami/spark:3.4
     container_name: spark-worker
     environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
+      - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
-      - "8081:8081"
+      - "2181:2181"
+    networks:
+      - hadoop
+
+  hbase:
+    image: harisekhon/hbase:latest
+    container_name: hbase
+    ports:
+      - "16010:16010" # Web UI
+      - "9090:9090" # RegionServer Web UI
+    environment:
+      - HBASE_MANAGES_ZK=false
+      - ZOOKEEPER_QUORUM=zookeeper
+    volumes:
+      - hbase_data:/hbase
     networks:
       - hadoop
     depends_on:
-      - spark-master
-
-  # app:
-  #   build: ./app
-  #   container_name: my-app
-  #   environment:
-  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-  #     - HDFS_URI=hdfs://namenode:8020
-  #     - SPARK_MASTER=spark://spark-master:7077
-  #   networks:
-  #     - hadoop
-  #   depends_on:
-  #     - kafka
-  #     - hadoop-namenode
-  #     - spark-master
+      - zookeeper
 
 volumes:
   hadoop_namenode:
   hadoop_datanode:
+  hbase_data:
 
 networks:
   hadoop:
