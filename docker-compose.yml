@@ -98,16 +98,6 @@ services:
     volumes:
       - ./spark/spark_job.py:/opt/spark/spark_kafka_consumer.py
 
-  spark-worker:
-    image: bitnami/spark:3.4
-    container_name: spark-worker
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    ports:
-      - "2181:2181"
-    networks:
-      - hadoop
-
   hbase:
     image: harisekhon/hbase:latest
     container_name: hbase
@@ -123,6 +113,16 @@ services:
       - hadoop
     depends_on:
       - zookeeper
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    networks:
+      - hadoop
 
 volumes:
   hadoop_namenode:
