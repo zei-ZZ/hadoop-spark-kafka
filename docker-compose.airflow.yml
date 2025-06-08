@@ -1,0 +1,221 @@
+name: big_data_project
+services:
+  web_scraper:
+    container_name: web_scraper
+    build:
+      context: ./web-scraper
+    ports:
+      - "5000:5000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - hadoop
+    restart: on-failure
+
+  kafka:
+    image: bitnami/kafka:3.5
+    container_name: kafka
+    ports:
+      - "9094:9094"
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=INTERNAL://:9092,EXTERNAL://:9094,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INTERNAL
+      - KAFKA_KRAFT_CLUSTER_ID=wtgymTsyQUGcYmidYgO4Qw
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - hadoop
+
+  hadoop-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    environment:
+      - CLUSTER_NAME=test
+    ports:
+      - "9870:9870"
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    networks:
+      - hadoop
+
+  hadoop-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    environment:
+      - CLUSTER_NAME=test
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    networks:
+      - hadoop
+    depends_on:
+      - hadoop-namenode
+
+  spark-master:
+    image: bitnami/spark:4.0.0
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+    networks:
+      - hadoop
+    volumes:
+      - ./spark/test_batch_job.py:/opt/spark/test_batch_job.py
+
+  spark-worker:
+    image: bitnami/spark:4.0.0
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    ports:
+      - "8081:8081"
+    networks:
+      - hadoop
+    depends_on:
+      - spark-master
+
+  spark-stream-jobs:
+    container_name: spark-stream-jobs
+    image: bitnami/spark:4.0.0
+    depends_on:
+      - spark-master
+      - spark-worker
+      - kafka
+    networks:
+      - hadoop
+    command: bash -c "spark-submit \
+      --master spark://spark-master:7077 \
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.0 \
+      /opt/spark/spark_kafka_consumer.py"
+    volumes:
+      - ./spark/spark_job.py:/opt/spark/spark_kafka_consumer.py
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    networks:
+      - hadoop
+
+  hbase:
+    image: harisekhon/hbase:latest
+    container_name: hbase
+    ports:
+      - "16010:16010" # Web UI
+      - "9090:9090" # RegionServer Web UI
+    environment:
+      - HBASE_MANAGES_ZK=false
+      - ZOOKEEPER_QUORUM=zookeeper
+    volumes:
+      - hbase_data:/hbase
+    networks:
+      - hadoop
+    depends_on:
+      - zookeeper
+
+  airflow-init:
+    container_name: airflow-init
+    image: apache/airflow:2.9.1
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+    entrypoint: |
+      bash -c "
+        airflow db migrate &&
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com
+      "
+    volumes:
+      # - ./airflow/dags:/opt/airflow/dags
+      - ./spark:/opt/spark
+    networks:
+      - hadoop
+
+  airflow-scheduler:
+    container_name: airflow-scheduler
+    image: airflow-park
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      # - _PIP_ADDITIONAL_REQUIREMENTS= apache-airflow-providers-apache-spark==5.0.0
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./spark:/opt/spark
+    command: scheduler
+    networks:
+      - hadoop
+
+  airflow-webserver:
+    container_name: airflow-webserver
+    image: airflow-park
+    depends_on:
+      - postgres
+    ports:
+      - "8088:8080"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      # - _PIP_ADDITIONAL_REQUIREMENTS= apache-airflow-providers-apache-spark==5.0.0
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./spark:/opt/spark
+    networks:
+      - hadoop
+    command: webserver
+
+  airflow-triggerer:
+    container_name: airflow-triggerer
+    image: airflow-park
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      # - _PIP_ADDITIONAL_REQUIREMENTS= apache-airflow-providers-apache-spark==5.0.0
+    command: triggerer
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./spark:/opt/spark
+    networks:
+      - hadoop
+
+  postgres:
+    container_name: postgres
+    image: postgres:13
+    # volumes:
+    # - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    networks:
+      - hadoop
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+  hbase_data:
+  airflow_dag:
+  postgres_data:
+
+networks:
+  hadoop:
+    driver: bridge
