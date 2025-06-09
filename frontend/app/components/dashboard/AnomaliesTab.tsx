@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { AlertTriangle, Filter, ChevronDown, ChevronUp, X } from "lucide-react"
+import { AlertTriangle, Filter, ChevronDown, ChevronUp, X, Check } from "lucide-react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -39,15 +39,21 @@ export function AnomaliesTab() {
     const itemsPerPage = 10
     const [anomalies, setAnomalies] = useState<any[]>([])
     const [pagination, setPagination] = useState<{ page: number; page_size: number; total: number; total_pages: number }>({ page: 1, page_size: 10, total: 0, total_pages: 0 })
+    const [appliedFilters, setAppliedFilters] = useState({
+        country: "",
+        disasterType: "",
+        year: "",
+        anomalyType: "all"
+    })
 
     useEffect(() => {
         const fetchAnomalies = async () => {
             const queryParams = new URLSearchParams()
-            if (selectedCountry) queryParams.append("country", selectedCountry)
-            if (selectedDisasterType) queryParams.append("disaster_type", selectedDisasterType)
-            if (yearRange.start) queryParams.append("start_year", yearRange.start)
-            if (selectedAnomalyType !== "all") {
-                queryParams.append("anomaly_type", selectedAnomalyType)
+            if (appliedFilters.country) queryParams.append("country", appliedFilters.country)
+            if (appliedFilters.disasterType) queryParams.append("disaster_type", appliedFilters.disasterType)
+            if (appliedFilters.year) queryParams.append("start_year", appliedFilters.year)
+            if (appliedFilters.anomalyType !== "all") {
+                queryParams.append("anomaly_type", appliedFilters.anomalyType)
             }
             if (pagination.page) queryParams.append("page", pagination.page.toString())
             if (pagination.page_size) queryParams.append("page_size", pagination.page_size.toString())
@@ -59,7 +65,7 @@ export function AnomaliesTab() {
         }
 
         fetchAnomalies()
-    }, [selectedCountry, selectedDisasterType, yearRange.start, selectedAnomalyType, pagination.page, pagination.page_size])
+    }, [appliedFilters, pagination.page, pagination.page_size])
 
     const handleYearChange = (field: 'start' | 'end') => (e: ChangeEvent<HTMLInputElement>) => {
         setYearRange(prev => ({ ...prev, [field]: e.target.value }))
@@ -103,6 +109,15 @@ export function AnomaliesTab() {
             coordinates: anomaly["coordinates"] || [0, 0],
         };
     });
+
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            country: selectedCountry,
+            disasterType: selectedDisasterType,
+            year: yearRange.start,
+            anomalyType: selectedAnomalyType
+        })
+    }
 
     return (
         <TabsContent value="anomalies">
@@ -236,11 +251,24 @@ export function AnomaliesTab() {
                                                 setSelectedDisasterType("")
                                                 setSelectedAnomalyType("all")
                                                 setYearRange({ start: "" })
+                                                setAppliedFilters({
+                                                    country: "",
+                                                    disasterType: "",
+                                                    year: "",
+                                                    anomalyType: "all"
+                                                })
                                             }}
                                             className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
                                         >
                                             <X className="h-4 w-4 mr-2" />
                                             Clear Filters
+                                        </Button>
+                                        <Button
+                                            onClick={handleApplyFilters}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-2 px-4 py-2 rounded-md shadow-sm"
+                                        >
+                                            <Check className="h-4 w-4" />
+                                            Apply Filters
                                         </Button>
                                     </div>
                                 </div>
