@@ -119,6 +119,8 @@ export function AnomaliesTab() {
             year: yearRange.start,
             anomalyType: selectedAnomalyType
         })
+        setCurrentPage(1)
+        setPagination(prev => ({ ...prev, page: 1 }))
     }
 
     return (
@@ -259,6 +261,8 @@ export function AnomaliesTab() {
                                                     year: "",
                                                     anomalyType: "all"
                                                 })
+                                                setCurrentPage(1)
+                                                setPagination(prev => ({ ...prev, page: 1 }))
                                             }}
                                             className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
                                         >
