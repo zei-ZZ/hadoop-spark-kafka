@@ -34,5 +34,13 @@ def index():
     return {"status": "running"}
 
 
+@app.route("/data")
+def get_data():
+    return {
+        "messages": kafka_producer_service.get_messages()
+    }
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)

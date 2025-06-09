@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mongo Visualizer Frontend</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>MongoDB Data Viewer</h1>
+  <form id="add-form">
+    <input type="text" id="name" placeholder="Name" required />
+    <input type="number" id="magnitude" step="any" placeholder="Magnitude" required />
+    <input type="text" id="location" placeholder="Location" required />
+    <button type="submit">Add Data</button>
+  </form>
+
+  <h2>Data:</h2>
+  <table id="data-table">
+    <thead>
+      <tr><th>Name</th><th>Magnitude</th><th>Location</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="script.js"></script>
+</body>
+</html>

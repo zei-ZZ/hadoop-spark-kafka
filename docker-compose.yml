@@ -116,6 +116,18 @@ services:
     networks:
       - hadoop
 
+  mongo-visualizer:
+    container_name: mongo-visualizer
+    build:
+      context: ./mongo-visualizer
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongodb
+    networks:
+      - hadoop
+
+
 volumes:
   hadoop_namenode:
   hadoop_datanode:
