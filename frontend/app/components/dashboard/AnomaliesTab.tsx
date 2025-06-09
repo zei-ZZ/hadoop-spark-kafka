@@ -367,7 +367,11 @@ export function AnomaliesTab() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    onClick={() => {
+                                        const newPage = Math.max(1, currentPage - 1);
+                                        setCurrentPage(newPage);
+                                        setPagination(prev => ({ ...prev, page: newPage }));
+                                    }}
                                     disabled={currentPage === 1}
                                 >
                                     Previous
@@ -375,7 +379,11 @@ export function AnomaliesTab() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setCurrentPage(prev => prev + 1)}
+                                    onClick={() => {
+                                        const newPage = currentPage + 1;
+                                        setCurrentPage(newPage);
+                                        setPagination(prev => ({ ...prev, page: newPage }));
+                                    }}
                                     disabled={currentPage * itemsPerPage >= pagination.total}
                                 >
                                     Next
