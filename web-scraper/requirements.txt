@@ -10,7 +10,8 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 kafka-python==2.2.11
 MarkupSafe==3.0.2
-requests==2.32.3
+requests==2.31.0    
+geopy==2.4.1 
 tzdata==2025.2
 tzlocal==5.3.1
 urllib3==2.4.0

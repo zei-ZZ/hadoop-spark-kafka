@@ -1,6 +1,9 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
+import logging
 
+logging.basicConfig()
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 class SchedulerService:
     def __init__(self):
@@ -9,4 +12,4 @@ class SchedulerService:
         atexit.register(self.scheduler.shutdown)
 
     def add_job(self, func, interval_seconds: int):
-        self.scheduler.add_job(func=func, trigger="interval", seconds=interval_seconds)
+        self.scheduler.add_job(func=func, trigger="interval", seconds=interval_seconds,)
