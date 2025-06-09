@@ -1,6 +1,6 @@
 from helpers.geo_coder import GeoCoder
 from helpers.alert_manager import AlertManager
-from Connections.hbase_rest_client import HBaseRestClient
+from Connections.mongo_client import MongoDBClient
 from config.streaming_config import StreamingConfig
 
 from pyspark.sql import SparkSession
@@ -35,7 +35,7 @@ class DataProcessor:
     def __init__(self, config: StreamingConfig):
         self.config = config
         self.spark = self._create_spark_session()
-        self.hbase_client = HBaseRestClient(config.HBASE_REST_URL) if config.OUTPUT_MODE == 'hbase_rest' else None
+        self.mongo_client = MongoDBClient("mongo:27017","bigdata")
         self.alert_manager = AlertManager()  # Initialize AlertManager
         self._setup_schemas()
         
@@ -412,8 +412,8 @@ class DataProcessor:
                     # Remove None values
                     clean_data = {k: v for k, v in row_data.items() if v is not None}
                     
-                    if self.hbase_client.write_row(table_name, row_key, clean_data):
-                        success_count += 1
+                    self.mongo_client.write_to_collection("metrics", clean_data)
+                     
                 
                 logger.info(f"Successfully wrote {success_count}/{len(rows)} records to HBase")
         
@@ -428,6 +428,7 @@ class DataProcessor:
     def create_writer(self, stream, query_name, path_suffix_or_table):
         """Create appropriate writer based on output mode"""
         output_mode = self.config.OUTPUT_MODE.lower()
+        return self.write_to_hbase_rest(stream, query_name, path_suffix_or_table)
         
         if output_mode == 'console':
             return self.write_to_console(stream, query_name)
@@ -509,17 +510,17 @@ class DataProcessor:
                 .option("checkpointLocation", f"{self.config.CHECKPOINT_DIR}/earthquake_stream") \
                 .start()
             
-            # logger.info(f"Starting fire query with output mode: {self.config.OUTPUT_MODE}")
-            # fire_query = processed_fires.writeStream \
-            #     .foreachBatch(process_fire_alerts) \
-            #     .outputMode("append") \
-            #     .format("console") \
-            #     .option("truncate", "false") \
-            #     .option("numRows", 20) \
-            #     .trigger(processingTime="5 seconds") \
-            #     .queryName("fire_stream") \
-            #     .option("checkpointLocation", f"{self.config.CHECKPOINT_DIR}/fire_stream") \
-            #     .start()
+            logger.info(f"Starting fire query with output mode: {self.config.OUTPUT_MODE}")
+            fire_query = processed_fires.writeStream \
+                .foreachBatch(process_fire_alerts) \
+                .outputMode("append") \
+                .format("console") \
+                .option("truncate", "false") \
+                .option("numRows", 20) \
+                .trigger(processingTime="5 seconds") \
+                .queryName("fire_stream") \
+                .option("checkpointLocation", f"{self.config.CHECKPOINT_DIR}/fire_stream") \
+                .start()
             
             logger.info("Starting metrics query...")
             metrics_query = metrics_stream.writeStream \
