@@ -60,7 +60,8 @@ def get_anomalies():
                 elif field in ["Magnitude", "Total Deaths", "Total Affected"]:
                     query[field] = float(arg)
                 else:
-                    query[field] = arg
+                    # Use case-insensitive regex for text fields
+                    query[field] = {"$regex": arg, "$options": "i"}
             except ValueError:
                 return jsonify({"error": f"Invalid value for {field}"}), 400
 

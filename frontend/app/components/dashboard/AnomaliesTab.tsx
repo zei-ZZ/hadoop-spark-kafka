@@ -50,9 +50,11 @@ export function AnomaliesTab() {
         const fetchAnomalies = async () => {
             const queryParams = new URLSearchParams()
             if (appliedFilters.country) queryParams.append("country", appliedFilters.country)
-            if (appliedFilters.disasterType) queryParams.append("disaster_type", appliedFilters.disasterType)
+            if (appliedFilters.disasterType && appliedFilters.disasterType !== "all") {
+                queryParams.append("disaster_type", appliedFilters.disasterType)
+            }
             if (appliedFilters.year) queryParams.append("start_year", appliedFilters.year)
-            if (appliedFilters.anomalyType !== "all") {
+            if (appliedFilters.anomalyType && appliedFilters.anomalyType !== "all") {
                 queryParams.append("anomaly_type", appliedFilters.anomalyType)
             }
             if (pagination.page) queryParams.append("page", pagination.page.toString())
@@ -96,7 +98,7 @@ export function AnomaliesTab() {
             anomalyType = "affected";
         }
         return {
-            id: anomaly.id || `${anomaly["Country"] || ""}-${anomaly["Event Name"] || anomaly["Disaster Type"] || idx}`,
+            id: anomaly.id || `${anomaly["Country"] || ""}-${anomaly["Event Name"] || anomaly["Disaster Type"] || ""}-${idx}`,
             disasterType: anomaly["Disaster Type"] || "",
             country: anomaly["Country"] || "",
             eventName: anomaly["Event Name"] || "",
