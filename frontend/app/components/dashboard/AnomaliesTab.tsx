@@ -34,8 +34,6 @@ export function AnomaliesTab() {
     const [currentPage, setCurrentPage] = useState(1)
     const [showFilters, setShowFilters] = useState(true)
     const itemsPerPage = 10
-    const [sortBy, setSortBy] = useState<keyof AnomalyEvent | null>(null)
-    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
     const [anomalies, setAnomalies] = useState<any[]>([])
     const [pagination, setPagination] = useState<{ page: number; page_size: number; total: number; total_pages: number }>({ page: 1, page_size: 10, total: 0, total_pages: 0 })
 
@@ -82,38 +80,7 @@ export function AnomaliesTab() {
     }
 
     // Sorting
-    let sortedAnomalies = [...anomalies]
-    if (sortBy) {
-        sortedAnomalies.sort((a, b) => {
-            let aValue = a[sortBy]
-            let bValue = b[sortBy]
-            if (sortBy === "date" || sortBy === "lastUpdated") {
-                aValue = new Date(aValue as string).getTime()
-                bValue = new Date(bValue as string).getTime()
-            }
-            if (typeof aValue === "string" && typeof bValue === "string") {
-                aValue = aValue.toLowerCase()
-                bValue = bValue.toLowerCase()
-            }
-            if (aValue == null) return 1
-            if (bValue == null) return -1
-            if (aValue < bValue) return sortDirection === "asc" ? -1 : 1
-            if (aValue > bValue) return sortDirection === "asc" ? 1 : -1
-            return 0
-        })
-    }
-
-    const handleSort = (column: keyof AnomalyEvent) => {
-        if (sortBy === column) {
-            setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-        } else {
-            setSortBy(column)
-            setSortDirection("asc")
-        }
-    }
-
-    // Map API response fields to expected table fields
-    const mappedAnomalies = sortedAnomalies.map((anomaly: any, idx: number) => {
+    const mappedAnomalies = anomalies.map((anomaly: any, idx: number) => {
         const magnitude = anomaly["Magnitude"] ?? null;
         const deaths = anomaly["Total Deaths"] ?? null;
         const affected = anomaly["Total Affected"] ?? null;
@@ -273,34 +240,14 @@ export function AnomaliesTab() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-gray-50 hover:bg-gray-50">
-                                    <TableHead onClick={() => handleSort("disasterType")} className="cursor-pointer select-none">
-                                        Disaster Type
-                                        {sortBy === "disasterType" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
-                                    <TableHead onClick={() => handleSort("country")} className="cursor-pointer select-none">
-                                        Country
-                                        {sortBy === "country" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
-                                    <TableHead onClick={() => handleSort("date")} className="cursor-pointer select-none">
-                                        Date
-                                        {sortBy === "date" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
-                                    <TableHead onClick={() => handleSort("magnitude")} className="cursor-pointer select-none text-right">
-                                        Magnitude
-                                        {sortBy === "magnitude" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
-                                    <TableHead onClick={() => handleSort("deaths")} className="cursor-pointer select-none text-right">
-                                        Deaths
-                                        {sortBy === "deaths" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
-                                    <TableHead onClick={() => handleSort("affected")} className="cursor-pointer select-none text-right">
-                                        Affected
-                                        {sortBy === "affected" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
-                                    <TableHead onClick={() => handleSort("anomalyType")} className="cursor-pointer select-none">
-                                        Anomaly Type
-                                        {sortBy === "anomalyType" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Disaster Type</TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Country</TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Event Name</TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Date</TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Magnitude</TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Deaths</TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Affected</TableHead>
+                                    <TableHead className="px-4 py-2 text-left">Anomaly Type</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -321,6 +268,9 @@ export function AnomaliesTab() {
                                                 {anomaly.disasterType}
                                             </TableCell>
                                             <TableCell>{anomaly.country}</TableCell>
+                                            <TableCell>
+                                                {anomaly.eventName}
+                                            </TableCell>
                                             <TableCell>
                                                 {anomaly.date || ""}
                                             </TableCell>
