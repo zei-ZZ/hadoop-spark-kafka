@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { AlertTriangle, Filter, ChevronDown, ChevronUp } from "lucide-react"
+import { AlertTriangle, Filter, ChevronDown, ChevronUp, X } from "lucide-react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -138,80 +138,115 @@ export function AnomaliesTab() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {/* Filters */}
-                    {showFilters && (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Disaster Type</label>
-                                <Select value={selectedDisasterType} onValueChange={setSelectedDisasterType}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Types</SelectItem>
-                                        <SelectItem value="earthquake">Earthquake</SelectItem>
-                                        <SelectItem value="flood">Flood</SelectItem>
-                                        <SelectItem value="storm">Storm</SelectItem>
-                                        <SelectItem value="wildfire">Wildfire</SelectItem>
-                                        <SelectItem value="volcanic activity">Volcanic Activity</SelectItem>
-                                        <SelectItem value="tsunami">Tsunami</SelectItem>
-                                        <SelectItem value="drought">Drought</SelectItem>
-                                        <SelectItem value="landslide">Landslide</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                    <div className="mb-4">
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex items-center justify-between mb-4 p-4 border-b border-gray-100">
+                                <div className="flex items-center gap-2">
+                                    <Filter className="h-5 w-5 text-gray-500" />
+                                    <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                                </div>
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                                >
+                                    {showFilters ? (
+                                        <ChevronUp className="h-5 w-5" />
+                                    ) : (
+                                        <ChevronDown className="h-5 w-5" />
+                                    )}
+                                </button>
                             </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Anomaly Type</label>
-                                <Select value={selectedAnomalyType} onValueChange={setSelectedAnomalyType}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select anomaly" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Anomalies</SelectItem>
-                                        <SelectItem value="magnitude">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-blue-500" />
-                                                Magnitude
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value="deaths">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-red-500" />
-                                                Deaths
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value="affected">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-orange-500" />
-                                                Affected
-                                            </div>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                {/* <label className="text-sm font-medium text-gray-700">Year Range</label> */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Start Year</label>
-
-                                        <Input
-                                            type="number"
-                                            placeholder="Start Year"
-                                            value={yearRange.start}
-                                            onChange={(e) => setYearRange({ ...yearRange, start: e.target.value })}
-                                            className="w-full"
-                                        />
+                            {showFilters && (
+                                <div className="space-y-6 p-4">
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div className="w-full">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                                            <Input
+                                                type="text"
+                                                placeholder="Filter by country"
+                                                value={selectedCountry}
+                                                onChange={(e) => setSelectedCountry(e.target.value)}
+                                                className="w-full focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div className="w-full">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Disaster Type</label>
+                                            <Select value={selectedDisasterType} onValueChange={setSelectedDisasterType}>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Types</SelectItem>
+                                                    <SelectItem value="earthquake">Earthquake</SelectItem>
+                                                    <SelectItem value="flood">Flood</SelectItem>
+                                                    <SelectItem value="storm">Storm</SelectItem>
+                                                    <SelectItem value="wildfire">Wildfire</SelectItem>
+                                                    <SelectItem value="volcanic activity">Volcanic Activity</SelectItem>
+                                                    <SelectItem value="tsunami">Tsunami</SelectItem>
+                                                    <SelectItem value="drought">Drought</SelectItem>
+                                                    <SelectItem value="landslide">Landslide</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="w-full">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Start Year</label>
+                                            <Input
+                                                type="number"
+                                                placeholder="Filter by year"
+                                                value={yearRange.start}
+                                                onChange={(e) => setYearRange({ ...yearRange, start: e.target.value })}
+                                                className="w-full focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div className="w-full">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Anomaly Type</label>
+                                            <Select value={selectedAnomalyType} onValueChange={setSelectedAnomalyType}>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select anomaly" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Anomalies</SelectItem>
+                                                    <SelectItem value="magnitude">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                                            Magnitude
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="deaths">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-red-500" />
+                                                            Deaths
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="affected">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full bg-orange-500" />
+                                                            Affected
+                                                        </div>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setSelectedCountry("")
+                                                setSelectedDisasterType("")
+                                                setSelectedAnomalyType("all")
+                                                setYearRange({ start: "" })
+                                            }}
+                                            className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <X className="h-4 w-4 mr-2" />
+                                            Clear Filters
+                                        </Button>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="flex items-end">
-                                <Button className="w-full">Apply Filters</Button>
-                            </div>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* Data Table */}
                     <div className="rounded-lg border border-gray-200 bg-white">
