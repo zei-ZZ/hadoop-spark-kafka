@@ -33,7 +33,6 @@ export function AnomaliesTab() {
     const [yearRange, setYearRange] = useState<{ start: string }>({
         start: "",
     })
-    const [selectedAnomalyType, setSelectedAnomalyType] = useState<string>("all")
     const [currentPage, setCurrentPage] = useState(1)
     const [showFilters, setShowFilters] = useState(true)
     const itemsPerPage = 10
@@ -43,7 +42,6 @@ export function AnomaliesTab() {
         country: "",
         disasterType: "",
         year: "",
-        anomalyType: "all"
     })
 
     useEffect(() => {
@@ -54,9 +52,6 @@ export function AnomaliesTab() {
                 queryParams.append("disaster_type", appliedFilters.disasterType)
             }
             if (appliedFilters.year) queryParams.append("start_year", appliedFilters.year)
-            if (appliedFilters.anomalyType && appliedFilters.anomalyType !== "all") {
-                queryParams.append("anomaly_type", appliedFilters.anomalyType)
-            }
             if (pagination.page) queryParams.append("page", pagination.page.toString())
             if (pagination.page_size) queryParams.append("page_size", pagination.page_size.toString())
 
@@ -117,7 +112,6 @@ export function AnomaliesTab() {
             country: selectedCountry,
             disasterType: selectedDisasterType,
             year: yearRange.start,
-            anomalyType: selectedAnomalyType
         })
         setCurrentPage(1)
         setPagination(prev => ({ ...prev, page: 1 }))
@@ -177,7 +171,7 @@ export function AnomaliesTab() {
                             </div>
                             {showFilters && (
                                 <div className="space-y-6 p-4">
-                                    <div className="grid grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-3 gap-6">
                                         <div className="w-full">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
                                             <Input
@@ -185,13 +179,13 @@ export function AnomaliesTab() {
                                                 placeholder="Filter by country"
                                                 value={selectedCountry}
                                                 onChange={(e) => setSelectedCountry(e.target.value)}
-                                                className="w-full focus:ring-2 focus:ring-blue-500"
+                                                className="w-full focus:ring-2 focus:ring-blue-500 h-10"
                                             />
                                         </div>
                                         <div className="w-full">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Disaster Type</label>
                                             <Select value={selectedDisasterType} onValueChange={setSelectedDisasterType}>
-                                                <SelectTrigger className="w-full">
+                                                <SelectTrigger className="w-full h-10">
                                                     <SelectValue placeholder="Select type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -214,37 +208,8 @@ export function AnomaliesTab() {
                                                 placeholder="Filter by year"
                                                 value={yearRange.start}
                                                 onChange={(e) => setYearRange({ ...yearRange, start: e.target.value })}
-                                                className="w-full focus:ring-2 focus:ring-blue-500"
+                                                className="w-full focus:ring-2 focus:ring-blue-500 h-10"
                                             />
-                                        </div>
-                                        <div className="w-full">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Anomaly Type</label>
-                                            <Select value={selectedAnomalyType} onValueChange={setSelectedAnomalyType}>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select anomaly" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">All Anomalies</SelectItem>
-                                                    <SelectItem value="magnitude">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="w-2 h-2 rounded-full bg-blue-500" />
-                                                            Magnitude
-                                                        </div>
-                                                    </SelectItem>
-                                                    <SelectItem value="deaths">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="w-2 h-2 rounded-full bg-red-500" />
-                                                            Deaths
-                                                        </div>
-                                                    </SelectItem>
-                                                    <SelectItem value="affected">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="w-2 h-2 rounded-full bg-orange-500" />
-                                                            Affected
-                                                        </div>
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
                                         </div>
                                     </div>
                                     <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
@@ -253,13 +218,11 @@ export function AnomaliesTab() {
                                             onClick={() => {
                                                 setSelectedCountry("")
                                                 setSelectedDisasterType("")
-                                                setSelectedAnomalyType("all")
                                                 setYearRange({ start: "" })
                                                 setAppliedFilters({
                                                     country: "",
                                                     disasterType: "",
                                                     year: "",
-                                                    anomalyType: "all"
                                                 })
                                                 setCurrentPage(1)
                                                 setPagination(prev => ({ ...prev, page: 1 }))
