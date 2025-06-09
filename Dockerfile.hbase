@@ -1,0 +1,13 @@
+FROM harisekhon/hbase:latest
+
+USER root
+
+RUN apk update --no-cache \
+  && apk --no-cache --no-signature add curl
+
+RUN mkdir /jmx \
+  && curl -L -o /jmx/jmx_prometheus_javaagent.jar https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.20.0/jmx_prometheus_javaagent-0.20.0.jar
+
+COPY jmx/hbase-config.yml /jmx/hbase-config.yml
+
+ENV HBASE_OPTS="-javaagent:/jmx/jmx_prometheus_javaagent.jar=9404:/jmx/hbase-config.yml"
