@@ -1,14 +1,24 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS  # ✅ import CORS
 from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # ✅ enable CORS on all routes
 
-# Connect to the MongoDB service by container name (thanks to the shared Docker network)
-client = MongoClient("mongodb://mongo:27017/")
-db = client["test_db"]
-collection = db["test_collection"]
+# Get MongoDB URI from environment variable
+mongo_uri = os.getenv('MONGODB_URI')
+if not mongo_uri:
+    raise ValueError("MONGODB_URI environment variable is not set")
+
+# Connect to MongoDB using the cloud URI
+client = MongoClient(mongo_uri)
+db = client["disasterDB"]
+collection = db["anomalies"]
 
 @app.route("/")
 def index():
