@@ -1,0 +1,11 @@
+startDelaySeconds: 0
+hostPort: 0.0.0.0:9404
+jmxUrl: ""
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: 'Hadoop<name=(.+), service=(.+)><>(.+):'
+    name: hbase_$1_$3
+    type: GAUGE
+    labels:
+      service: "$2"

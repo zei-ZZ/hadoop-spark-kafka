@@ -104,15 +104,42 @@ services:
     ports:
       - "16010:16010" # Web UI
       - "9090:9090" # RegionServer Web UI
+      - "9404:9404"  # JMX Exporter port
     environment:
       - HBASE_MANAGES_ZK=false
       - ZOOKEEPER_QUORUM=zookeeper
     volumes:
       - hbase_data:/hbase
+      - ./jmx-exporter-config.yml:/jmx-exporter-config.yml
     networks:
       - hadoop
     depends_on:
       - zookeeper
+    command: >
+      bash -c "java
+        -javaagent:/opt/jmx_exporter/jmx_prometheus_javaagent-0.18.0.jar=9404:/jmx-exporter-config.yml
+        -jar /hbase/hbase.jar"
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9091:9090"
+    networks:
+      - hadoop
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - hadoop
+    depends_on:
+      - prometheus
+    
 
   zookeeper:
     image: bitnami/zookeeper:latest
@@ -132,3 +159,4 @@ volumes:
 networks:
   hadoop:
     driver: bridge
+
