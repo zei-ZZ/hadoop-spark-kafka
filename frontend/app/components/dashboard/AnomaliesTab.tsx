@@ -28,8 +28,11 @@ interface AnomalyEvent {
 
 export function AnomaliesTab() {
     // State for anomalies tab
-    const [selectedDisasterType, setSelectedDisasterType] = useState<string>("all")
-    const [yearRange, setYearRange] = useState<{ start: string; end: string }>({ start: "", end: "" })
+    const [selectedCountry, setSelectedCountry] = useState<string>("")
+    const [selectedDisasterType, setSelectedDisasterType] = useState<string>("")
+    const [yearRange, setYearRange] = useState<{ start: string }>({
+        start: "",
+    })
     const [selectedAnomalyType, setSelectedAnomalyType] = useState<string>("all")
     const [currentPage, setCurrentPage] = useState(1)
     const [showFilters, setShowFilters] = useState(true)
@@ -40,20 +43,14 @@ export function AnomaliesTab() {
     useEffect(() => {
         const fetchAnomalies = async () => {
             const queryParams = new URLSearchParams()
-            if (selectedDisasterType !== "all") {
-                queryParams.append("disaster_type", selectedDisasterType)
-            }
+            if (selectedCountry) queryParams.append("country", selectedCountry)
+            if (selectedDisasterType) queryParams.append("disaster_type", selectedDisasterType)
+            if (yearRange.start) queryParams.append("start_year", yearRange.start)
             if (selectedAnomalyType !== "all") {
                 queryParams.append("anomaly_type", selectedAnomalyType)
             }
-            if (yearRange.start) {
-                queryParams.append("start_year", yearRange.start)
-            }
-            if (yearRange.end) {
-                queryParams.append("end_year", yearRange.end)
-            }
-            queryParams.append("page", currentPage.toString())
-            queryParams.append("page_size", itemsPerPage.toString())
+            if (pagination.page) queryParams.append("page", pagination.page.toString())
+            if (pagination.page_size) queryParams.append("page_size", pagination.page_size.toString())
 
             const response = await fetch(`http://localhost:5001/anomalies?${queryParams}`)
             const data = await response.json()
@@ -62,7 +59,7 @@ export function AnomaliesTab() {
         }
 
         fetchAnomalies()
-    }, [selectedDisasterType, selectedAnomalyType, yearRange, currentPage, itemsPerPage])
+    }, [selectedCountry, selectedDisasterType, yearRange.start, selectedAnomalyType, pagination.page, pagination.page_size])
 
     const handleYearChange = (field: 'start' | 'end') => (e: ChangeEvent<HTMLInputElement>) => {
         setYearRange(prev => ({ ...prev, [field]: e.target.value }))
@@ -194,22 +191,19 @@ export function AnomaliesTab() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Year Range</label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="number"
-                                        placeholder="Start Year"
-                                        value={yearRange.start}
-                                        onChange={handleYearChange('start')}
-                                        className="w-full"
-                                    />
-                                    <Input
-                                        type="number"
-                                        placeholder="End Year"
-                                        value={yearRange.end}
-                                        onChange={handleYearChange('end')}
-                                        className="w-full"
-                                    />
+                                {/* <label className="text-sm font-medium text-gray-700">Year Range</label> */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Start Year</label>
+
+                                        <Input
+                                            type="number"
+                                            placeholder="Start Year"
+                                            value={yearRange.start}
+                                            onChange={(e) => setYearRange({ ...yearRange, start: e.target.value })}
+                                            className="w-full"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
