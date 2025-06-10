@@ -3,7 +3,8 @@ from flask_cors import CORS  # ✅ import CORS
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
+import requests  # Add requests import
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,7 +39,7 @@ db = client["disasterDB"]
 
 @app.route("/anomalies", methods=["GET"])
 def get_anomalies():
-collection = db["anomalies"]
+    collection = db["anomalies"]
     # Define allowed filter fields and their types
     filter_fields = {
         "country": "Country",
@@ -306,6 +307,147 @@ def get_vulnerability_index():
             "critical_count": avg_vulnerability["critical_count"]
         }
     })
+
+def process_earthquake_data(data):
+    """Process earthquake data and add derived fields."""
+    processed = []
+    for event in data:
+        # Extract location
+        place_parts = event.get('place', '').split(',')
+        city = place_parts[0].strip() if place_parts else event.get('place', 'Unknown')
+        country = place_parts[1].strip() if len(place_parts) > 1 else 'Unknown'
+        
+        # Add severity based on magnitude
+        magnitude = event.get('magnitude', 0)
+        if magnitude < 4.0:
+            severity = "Low"
+        elif magnitude < 6.0:
+            severity = "Moderate"
+        elif magnitude < 7.0:
+            severity = "High"
+        else:
+            severity = "Extreme"
+        
+        processed_event = {
+            **event,
+            'city': city,
+            'country': country,
+            'severity': severity,
+            'type': 'earthquake',
+            'processed_time': datetime.utcnow()
+        }
+        processed.append(processed_event)
+    return processed
+
+def process_fire_data(data):
+    """Process fire data and add derived fields."""
+    processed = []
+    for event in data:
+        # Add severity based on confidence
+        confidence = event.get('confidence', 0)
+        if confidence < 30:
+            severity = "Low"
+        elif confidence < 60:
+            severity = "Moderate"
+        elif confidence < 80:
+            severity = "High"
+        else:
+            severity = "Extreme"
+        
+        processed_event = {
+            **event,
+            'type': 'fire',
+            'severity': severity,
+            'processed_time': datetime.utcnow()
+        }
+        processed.append(processed_event)
+    return processed
+
+@app.route("/earthquakes", methods=["GET"])
+def get_earthquakes():
+    try:
+        # Get query parameters
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 10))
+        severity = request.args.get("severity", "all")
+        time_range = request.args.get("time_range", "1h")
+        
+        # Calculate time filter
+        now = datetime.utcnow()
+        if time_range == "1h":
+            time_filter = now - timedelta(hours=1)
+        elif time_range == "2h":
+            time_filter = now - timedelta(hours=2)
+        elif time_range == "3h":
+            time_filter = now - timedelta(hours=3)
+        elif time_range == "6h":
+            time_filter = now - timedelta(hours=6)
+        elif time_range == "12h":
+            time_filter = now - timedelta(hours=12)
+        elif time_range == "24h":
+            time_filter = now - timedelta(hours=24)
+        else:
+            time_filter = now - timedelta(hours=1)  # Default to 1 hour
+        
+        # Get data from our own API endpoint
+        url = "http://localhost:5001/earthquakes"
+        params = {
+            "page": page,
+            "page_size": page_size,
+            "severity": severity,
+            "time_range": time_range
+        }
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch earthquake data"}), 500
+            
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/fires", methods=["GET"])
+def get_fires():
+    try:
+        # Get query parameters
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 10))
+        severity = request.args.get("severity", "all")
+        time_range = request.args.get("time_range", "1h")
+        
+        # Calculate time filter
+        now = datetime.utcnow()
+        if time_range == "1h":
+            time_filter = now - timedelta(hours=1)
+        elif time_range == "2h":
+            time_filter = now - timedelta(hours=2)
+        elif time_range == "3h":
+            time_filter = now - timedelta(hours=3)
+        elif time_range == "6h":
+            time_filter = now - timedelta(hours=6)
+        elif time_range == "12h":
+            time_filter = now - timedelta(hours=12)
+        elif time_range == "24h":
+            time_filter = now - timedelta(hours=24)
+        else:
+            time_filter = now - timedelta(hours=1)  # Default to 1 hour
+        
+        # Get data from our own API endpoint
+        url = "http://localhost:5001/fires"
+        params = {
+            "page": page,
+            "page_size": page_size,
+            "severity": severity,
+            "time_range": time_range
+        }
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch fire data"}), 500
+            
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
