@@ -9,7 +9,8 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     networks:
       - hadoop
     restart: on-failure
@@ -30,6 +31,11 @@ services:
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INTERNAL
       - KAFKA_KRAFT_CLUSTER_ID=wtgymTsyQUGcYmidYgO4Qw
       - ALLOW_PLAINTEXT_LISTENER=yes
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - hadoop
 
@@ -115,6 +121,18 @@ services:
     restart: unless-stopped
     networks:
       - hadoop
+
+  mongo-visualizer:
+    container_name: mongo-visualizer
+    build:
+      context: ./mongo-visualizer
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongodb
+    networks:
+      - hadoop
+
 
 volumes:
   hadoop_namenode:
