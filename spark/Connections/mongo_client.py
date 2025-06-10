@@ -1,29 +1,43 @@
-import time
 import logging
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
+
+from pyspark import SparkConf, SparkContext
+from pyspark.sql import SparkSession
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+conf = SparkConf()
 
+sc= SparkContext(conf=conf)
+
+spark= SparkSession .builder \
+        .config(sc.getConf)\
+        .appName('my-app-name') \
+        .getOrCreate()
 class MongoDBClient:
     """Simple MongoDB client for writing documents"""
-    
-    def __init__(self, uri, db_name):
-        self.client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-        self.db = self.client[db_name]
-    
-    def write_to_collection(self, collection_name, data):
-        """
-        Inserts a document into the specified MongoDB collection.
+        
+    def __init__(self, db_name, collection_name, app_name="my-app", convert_json="any"):
+        base_uri = "mongodb://mongo:27017/"
+        conf = SparkConf()
+        conf.setMaster("spark://spark-master:7077").setAppName("My app")
 
-        Args:
-            collection_name (str): The name of the collection to write to.
-            data (Dict[str, Any]): The data to insert as a document.
-        """
-        collection = self.db[collection_name]
-        result = collection.insert_one(data)
-        print(f"Inserted document with ID: {result.inserted_id}")
+        conf.set("spark.mongodb.read.connection.uri", base_uri)
+        conf.set("spark.mongodb.read.database", db_name)
+        conf.set("spark.mongodb.read.collection", collection_name)
+        conf.set("spark.mongodb.read.convertJson", convert_json)
+
+        conf.set("spark.mongodb.write.connection.uri", base_uri)
+        conf.set("spark.mongodb.write.database", db_name)
+        conf.set("spark.mongodb.write.collection", collection_name)
+        conf.set("spark.mongodb.write.convertJson", convert_json)
+        sc= SparkContext(conf=conf)
+        self.spark= SparkSession.builder \
+            .config(sc.getConf)\
+            .appName(app_name) \
+            .getOrCreate()
+
+    def get_spark_mongo(self):
+        return self.spark
