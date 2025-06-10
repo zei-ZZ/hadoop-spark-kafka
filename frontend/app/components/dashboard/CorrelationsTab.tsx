@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, Calendar, Clock, MapPin, ChevronUp, ChevronDown } from "lucide-react"
+import { AlertTriangle, Calendar, Clock, MapPin, ChevronUp, ChevronDown, Filter, X, Check } from "lucide-react"
 
 // Types for our mock data
 interface CorrelatedEvent {
@@ -124,6 +124,13 @@ export function CorrelationsTab() {
     const itemsPerPage = 8
     const [sortBy, setSortBy] = useState<keyof CorrelatedEvent | null>(null)
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+    const [showFilters, setShowFilters] = useState(true)
+    const [appliedFilters, setAppliedFilters] = useState({
+        country: "all",
+        disasterType: "all",
+        daysBetween: "all",
+        search: ""
+    })
 
     // Get unique countries and disaster types for filters
     const countries = Array.from(new Set(mockCorrelations.map(c => c.country)))
@@ -203,6 +210,16 @@ export function CorrelationsTab() {
         }
     }
 
+    const handleApplyFilters = () => {
+        setAppliedFilters({
+            country: selectedCountry,
+            disasterType: selectedDisasterType,
+            daysBetween: selectedDaysBetween,
+            search: searchQuery
+        })
+        setCurrentPage(1)
+    }
+
     return (
         <TabsContent value="correlations">
             <Card>
@@ -214,67 +231,139 @@ export function CorrelationsTab() {
                                 Pairs of different disaster types that occurred within 7 days of each other in the same country
                             </CardDescription>
                         </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="flex items-center gap-2"
+                        >
+                            <Filter className="h-4 w-4" />
+                            {showFilters ? (
+                                <>
+                                    Hide Filters
+                                    <ChevronUp className="h-4 w-4" />
+                                </>
+                            ) : (
+                                <>
+                                    Show Filters
+                                    <ChevronDown className="h-4 w-4" />
+                                </>
+                            )}
+                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {/* Filters */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Country</label>
-                            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select country" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Countries</SelectItem>
-                                    {countries.map(country => (
-                                        <SelectItem key={country} value={country}>{country}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <div className="mb-4">
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex items-center justify-between mb-4 p-4 border-b border-gray-100">
+                                <div className="flex items-center gap-2">
+                                    <Filter className="h-5 w-5 text-gray-500" />
+                                    <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                                </div>
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                                >
+                                    {showFilters ? (
+                                        <ChevronUp className="h-5 w-5" />
+                                    ) : (
+                                        <ChevronDown className="h-5 w-5" />
+                                    )}
+                                </button>
+                            </div>
+                            {showFilters && (
+                                <div className="space-y-6 p-4">
+                                    <div className="grid grid-cols-4 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">Country</label>
+                                            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                                                <SelectTrigger className="w-full h-10">
+                                                    <SelectValue placeholder="Select country" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Countries</SelectItem>
+                                                    {countries.map(country => (
+                                                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Disaster Type</label>
-                            <Select value={selectedDisasterType} onValueChange={setSelectedDisasterType}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Types</SelectItem>
-                                    {disasterTypes.map(type => (
-                                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">Disaster Type</label>
+                                            <Select value={selectedDisasterType} onValueChange={setSelectedDisasterType}>
+                                                <SelectTrigger className="w-full h-10">
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Types</SelectItem>
+                                                    {disasterTypes.map(type => (
+                                                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Days Between</label>
-                            <Select value={selectedDaysBetween} onValueChange={setSelectedDaysBetween}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select days" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Intervals</SelectItem>
-                                    {[0, 1, 2, 3, 4, 5, 6, 7].map(days => (
-                                        <SelectItem key={days} value={days.toString()}>
-                                            {days === 0 ? "Same day" : `${days} day${days === 1 ? "" : "s"}`}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">Days Between</label>
+                                            <Select value={selectedDaysBetween} onValueChange={setSelectedDaysBetween}>
+                                                <SelectTrigger className="w-full h-10">
+                                                    <SelectValue placeholder="Select days" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Intervals</SelectItem>
+                                                    {[0, 1, 2, 3, 4, 5, 6, 7].map(days => (
+                                                        <SelectItem key={days} value={days.toString()}>
+                                                            {days === 0 ? "Same day" : `${days} day${days === 1 ? "" : "s"}`}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Search</label>
-                            <Input
-                                type="text"
-                                placeholder="Search events..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full"
-                            />
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">Search</label>
+                                            <Input
+                                                type="text"
+                                                placeholder="Search events..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full h-10 focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setSelectedCountry("all")
+                                                setSelectedDisasterType("all")
+                                                setSelectedDaysBetween("all")
+                                                setSearchQuery("")
+                                                setAppliedFilters({
+                                                    country: "all",
+                                                    disasterType: "all",
+                                                    daysBetween: "all",
+                                                    search: ""
+                                                })
+                                                setCurrentPage(1)
+                                            }}
+                                            className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <X className="h-4 w-4 mr-2" />
+                                            Clear Filters
+                                        </Button>
+                                        <Button
+                                            onClick={handleApplyFilters}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-2 px-4 py-2 rounded-md shadow-sm"
+                                        >
+                                            <Check className="h-4 w-4" />
+                                            Apply Filters
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
