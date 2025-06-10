@@ -150,5 +150,74 @@ def get_volcano_hotspots():
         "results": results
     })
 
+@app.route("/vulnerability", methods=["GET"])
+def get_vulnerability_index():
+    collection = db["vulnerabilityIndex"]
+    
+    # Define allowed filter fields and their types
+    filter_fields = {
+        "country": "Country",
+        "min_disaster_count": "Disaster_Count",
+        "max_disaster_count": "Disaster_Count",
+        "min_total_damage": "Total_Damage",
+        "max_total_damage": "Total_Damage",
+        "min_total_deaths": "Total_Deaths",
+        "max_total_deaths": "Total_Deaths",
+        "min_vulnerability": "Vulnerability_Index",
+        "max_vulnerability": "Vulnerability_Index",
+        "min_recovery_days": "Avg_Recovery_Days",
+        "max_recovery_days": "Avg_Recovery_Days"
+    }
+    
+    # Build MongoDB filter from query params
+    query = {}
+    for param, field in filter_fields.items():
+        arg = request.args.get(param)
+        if arg is not None:
+            try:
+                if param == "country":
+                    # Use case-insensitive regex for country name
+                    query[field] = {"$regex": arg, "$options": "i"}
+                else:
+                    value = float(arg)
+                    if param.startswith("min_"):
+                        query[field] = {"$gte": value}
+                    elif param.startswith("max_"):
+                        if field in query:
+                            query[field]["$lte"] = value
+                        else:
+                            query[field] = {"$lte": value}
+            except ValueError:
+                return jsonify({"error": f"Invalid value for {field}"}), 400
+
+    # Pagination
+    try:
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 10))
+        if page < 1 or page_size < 1:
+            raise ValueError
+    except ValueError:
+        return jsonify({"error": "Invalid page or page_size"}), 400
+    skip = (page - 1) * page_size
+
+    # Get sort field and direction
+    sort_field = request.args.get("sort_by", "Vulnerability_Index")
+    sort_direction = -1 if request.args.get("sort_direction", "desc") == "desc" else 1
+
+    # Query MongoDB
+    total = collection.count_documents(query)
+    cursor = collection.find(query, {"_id": 0}).sort(sort_field, sort_direction).skip(skip).limit(page_size)
+    results = list(cursor)
+
+    return jsonify({
+        "results": results,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+    })
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
