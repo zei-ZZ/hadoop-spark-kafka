@@ -209,6 +209,19 @@ def get_vulnerability_index():
     cursor = collection.find(query, {"_id": 0}).sort(sort_field, sort_direction).skip(skip).limit(page_size)
     results = list(cursor)
 
+    # Calculate average vulnerability for all countries
+    avg_vulnerability = collection.aggregate([
+        {"$group": {
+            "_id": None,
+            "avg_vulnerability": {"$avg": "$Vulnerability_Index"},
+            "critical_count": {
+                "$sum": {
+                    "$cond": [{"$gte": ["$Vulnerability_Index", 0.06]}, 1, 0]
+                }
+            }
+        }}
+    ]).next()
+
     return jsonify({
         "results": results,
         "pagination": {
@@ -216,6 +229,10 @@ def get_vulnerability_index():
             "page_size": page_size,
             "total": total,
             "total_pages": (total + page_size - 1) // page_size
+        },
+        "stats": {
+            "avg_vulnerability": round(avg_vulnerability["avg_vulnerability"], 4),
+            "critical_count": avg_vulnerability["critical_count"]
         }
     })
 
