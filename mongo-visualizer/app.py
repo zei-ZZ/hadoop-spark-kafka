@@ -3,6 +3,7 @@ from flask_cors import CORS  # ✅ import CORS
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -48,7 +49,7 @@ def get_anomalies():
         "total_deaths": "Total Deaths",
         "total_affected": "Total Affected",
     }
-    
+
     # Build MongoDB filter from query params
     query = {}
     for param, field in filter_fields.items():
@@ -88,6 +89,76 @@ def get_anomalies():
             "total_pages": (total + page_size - 1) // page_size
         }
     })
+
+
+@app.route("/correlations", methods=["GET"])
+def get_correlations():
+    collection = db["correlations"]
+
+    # Allowed filters
+    filter_fields = {
+        "country": "Country",
+        "disaster_type_a": "DisasterType_A",
+        "event_name_a": "EventName_A",
+        "disaster_type_b": "DisasterType_B",
+        "event_name_b": "EventName_B",
+        "days_between": "Days_Between",
+    }
+
+    query = {}
+    for param, field in filter_fields.items():
+        arg = request.args.get(param)
+        if arg is not None:
+            try:
+                if field == "Days_Between":
+                    query[field] = int(arg)
+                else:
+                    query[field] = arg
+            except ValueError:
+                return jsonify({"error": f"Invalid value for {field}"}), 400
+
+    # Date filtering
+    date_filters = {
+        "start_date_a_from": ("StartDate_A", "$gte"),
+        "start_date_a_to": ("StartDate_A", "$lte"),
+        "start_date_b_from": ("StartDate_B", "$gte"),
+        "start_date_b_to": ("StartDate_B", "$lte"),
+    }
+
+    for param, (field, op) in date_filters.items():
+        arg = request.args.get(param)
+        if arg:
+            try:
+                dt = datetime.fromisoformat(arg)
+                query.setdefault(field, {})[op] = dt
+            except ValueError:
+                return jsonify({"error": f"Invalid date format for {param}. Use YYYY-MM-DD"}), 400
+
+    # Pagination
+    try:
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 10))
+        if page < 1 or page_size < 1:
+            raise ValueError
+    except ValueError:
+        return jsonify({"error": "Invalid page or page_size"}), 400
+    skip = (page - 1) * page_size
+
+    # Query
+    total = collection.count_documents(query)
+    cursor = collection.find(query, {"_id": 0}).skip(skip).limit(page_size)
+    results = list(cursor)
+
+    return jsonify({
+        "results": results,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+    })
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
