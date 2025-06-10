@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -10,121 +10,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Calendar, Clock, MapPin, ChevronUp, ChevronDown, Filter, X, Check } from "lucide-react"
 
-// Types for our mock data
 interface CorrelatedEvent {
-    id: string
-    country: string
-    disasterTypeA: string
-    startDateA: string
-    eventNameA: string
-    disasterTypeB: string
-    startDateB: string
-    eventNameB: string
-    daysBetween: number
+    Country: string
+    DisasterType_A: string
+    StartDate_A: string
+    EventName_A: string
+    DisasterType_B: string
+    StartDate_B: string
+    EventName_B: string
+    Days_Between: number
 }
 
-// Mock data for testing
-const mockCorrelations: CorrelatedEvent[] = [
-    {
-        id: "1",
-        country: "Indonesia",
-        disasterTypeA: "Earthquake",
-        startDateA: "2024-01-15",
-        eventNameA: "Sumatra Earthquake",
-        disasterTypeB: "Tsunami",
-        startDateB: "2024-01-16",
-        eventNameB: "Indian Ocean Tsunami",
-        daysBetween: 1
-    },
-    {
-        id: "2",
-        country: "Philippines",
-        disasterTypeA: "Typhoon",
-        startDateA: "2024-01-20",
-        eventNameA: "Super Typhoon Haiyan",
-        disasterTypeB: "Flood",
-        startDateB: "2024-01-22",
-        eventNameB: "Manila Flood Crisis",
-        daysBetween: 2
-    },
-    {
-        id: "3",
-        country: "Australia",
-        disasterTypeA: "Wildfire",
-        startDateA: "2024-01-10",
-        eventNameA: "Bushfire Crisis",
-        disasterTypeB: "Drought",
-        startDateB: "2024-01-15",
-        eventNameB: "Eastern Drought",
-        daysBetween: 5
-    },
-    {
-        id: "4",
-        country: "Japan",
-        disasterTypeA: "Earthquake",
-        startDateA: "2024-01-05",
-        eventNameA: "Tohoku Earthquake",
-        disasterTypeB: "Volcanic Activity",
-        startDateB: "2024-01-08",
-        eventNameB: "Mount Fuji Activity",
-        daysBetween: 3
-    },
-    {
-        id: "5",
-        country: "United States",
-        disasterTypeA: "Hurricane",
-        startDateA: "2024-01-18",
-        eventNameA: "Hurricane Katrina",
-        disasterTypeB: "Flood",
-        startDateB: "2024-01-20",
-        eventNameB: "New Orleans Flood",
-        daysBetween: 2
-    },
-    {
-        id: "6",
-        country: "Italy",
-        disasterTypeA: "Earthquake",
-        startDateA: "2024-01-12",
-        eventNameA: "Central Italy Earthquake",
-        disasterTypeB: "Landslide",
-        startDateB: "2024-01-14",
-        eventNameB: "Abruzzo Landslide",
-        daysBetween: 2
-    },
-    {
-        id: "7",
-        country: "Brazil",
-        disasterTypeA: "Flood",
-        startDateA: "2024-01-01",
-        eventNameA: "Amazon Flood",
-        disasterTypeB: "Landslide",
-        startDateB: "2024-01-05",
-        eventNameB: "Rio de Janeiro Landslide",
-        daysBetween: 4
-    },
-    {
-        id: "8",
-        country: "India",
-        disasterTypeA: "Cyclone",
-        startDateA: "2024-01-25",
-        eventNameA: "Cyclone Amphan",
-        disasterTypeB: "Flood",
-        startDateB: "2024-01-27",
-        eventNameB: "Kolkata Flood",
-        daysBetween: 2
-    }
-]
-
 export function CorrelationsTab() {
-    const [selectedCountry, setSelectedCountry] = useState<string>("all")
-    const [selectedDisasterType, setSelectedDisasterType] = useState<string>("all")
-    const [selectedDaysBetween, setSelectedDaysBetween] = useState<string>("all")
-    const [searchQuery, setSearchQuery] = useState("")
+    const [data, setData] = useState<CorrelatedEvent[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
+    const [totalItems, setTotalItems] = useState(0)
     const itemsPerPage = 8
-    const [sortBy, setSortBy] = useState<keyof CorrelatedEvent | null>(null)
-    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
     const [showFilters, setShowFilters] = useState(true)
+    const [selectedCountry, setSelectedCountry] = useState("all")
+    const [selectedDisasterType, setSelectedDisasterType] = useState("all")
+    const [selectedDaysBetween, setSelectedDaysBetween] = useState("all")
+    const [searchQuery, setSearchQuery] = useState("")
     const [appliedFilters, setAppliedFilters] = useState({
         country: "all",
         disasterType: "all",
@@ -132,11 +40,48 @@ export function CorrelationsTab() {
         search: ""
     })
 
+    // Fetch data from API
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true)
+                const queryParams = new URLSearchParams({
+                    page: currentPage.toString(),
+                    page_size: itemsPerPage.toString()
+                })
+
+                // Add filters from appliedFilters state
+                if (appliedFilters.country !== "all") queryParams.append("country", appliedFilters.country)
+                if (appliedFilters.disasterType !== "all") {
+                    queryParams.append("disaster_type_a", appliedFilters.disasterType)
+                }
+                if (appliedFilters.daysBetween !== "all") queryParams.append("days_between", appliedFilters.daysBetween)
+                if (appliedFilters.search) {
+                    queryParams.append("event_name_a", appliedFilters.search)
+                    queryParams.append("event_name_b", appliedFilters.search)
+                }
+
+                const response = await fetch(`http://localhost:5001/correlations?${queryParams}`)
+                if (!response.ok) throw new Error('Failed to fetch data')
+
+                const result = await response.json()
+                setData(result.results)
+                setTotalItems(result.pagination.total)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'An error occurred')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchData()
+    }, [currentPage, itemsPerPage, appliedFilters])
+
     // Get unique countries and disaster types for filters
-    const countries = Array.from(new Set(mockCorrelations.map(c => c.country)))
+    const countries = Array.from(new Set(data.map(c => c.Country)))
     const disasterTypes = Array.from(new Set([
-        ...mockCorrelations.map(c => c.disasterTypeA),
-        ...mockCorrelations.map(c => c.disasterTypeB)
+        ...data.map(c => c.DisasterType_A),
+        ...data.map(c => c.DisasterType_B)
     ]))
 
     const getDisasterTypeColor = (type: string) => {
@@ -164,58 +109,26 @@ export function CorrelationsTab() {
         }
     }
 
-    let filteredCorrelations = mockCorrelations.filter(correlation => {
-        const matchesCountry = selectedCountry === "all" || correlation.country === selectedCountry
-        const matchesDisasterType = selectedDisasterType === "all" ||
-            correlation.disasterTypeA === selectedDisasterType ||
-            correlation.disasterTypeB === selectedDisasterType
-        const matchesDaysBetween = selectedDaysBetween === "all" ||
-            correlation.daysBetween === parseInt(selectedDaysBetween)
-        const matchesSearch = searchQuery === "" ||
-            correlation.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            correlation.eventNameA.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            correlation.eventNameB.toLowerCase().includes(searchQuery.toLowerCase())
-
-        return matchesCountry && matchesDisasterType && matchesDaysBetween && matchesSearch
-    })
-
-    // Sorting
-    if (sortBy) {
-        filteredCorrelations = [...filteredCorrelations].sort((a, b) => {
-            let aValue = a[sortBy]
-            let bValue = b[sortBy]
-            if (sortBy === "startDateA" || sortBy === "startDateB") {
-                aValue = new Date(aValue as string).getTime()
-                bValue = new Date(bValue as string).getTime()
-            }
-            if (aValue < bValue) return sortDirection === "asc" ? -1 : 1
-            if (aValue > bValue) return sortDirection === "asc" ? 1 : -1
-            return 0
-        })
-    }
-
-    // Pagination
-    const totalResults = filteredCorrelations.length
-    const paginatedCorrelations = filteredCorrelations.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    )
-
-    const handleSort = (column: keyof CorrelatedEvent) => {
-        if (sortBy === column) {
-            setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-        } else {
-            setSortBy(column)
-            setSortDirection("asc")
-        }
-    }
-
     const handleApplyFilters = () => {
         setAppliedFilters({
             country: selectedCountry,
             disasterType: selectedDisasterType,
             daysBetween: selectedDaysBetween,
             search: searchQuery
+        })
+        setCurrentPage(1) // Reset to first page when applying new filters
+    }
+
+    const handleClearFilters = () => {
+        setSelectedCountry("all")
+        setSelectedDisasterType("all")
+        setSelectedDaysBetween("all")
+        setSearchQuery("")
+        setAppliedFilters({
+            country: "all",
+            disasterType: "all",
+            daysBetween: "all",
+            search: ""
         })
         setCurrentPage(1)
     }
@@ -336,19 +249,7 @@ export function CorrelationsTab() {
                                     <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
                                         <Button
                                             variant="outline"
-                                            onClick={() => {
-                                                setSelectedCountry("all")
-                                                setSelectedDisasterType("all")
-                                                setSelectedDaysBetween("all")
-                                                setSearchQuery("")
-                                                setAppliedFilters({
-                                                    country: "all",
-                                                    disasterType: "all",
-                                                    daysBetween: "all",
-                                                    search: ""
-                                                })
-                                                setCurrentPage(1)
-                                            }}
+                                            onClick={handleClearFilters}
                                             className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
                                         >
                                             <X className="h-4 w-4 mr-2" />
@@ -372,28 +273,35 @@ export function CorrelationsTab() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-gray-50 hover:bg-gray-50">
-                                    <TableHead onClick={() => handleSort("country")} className="cursor-pointer select-none">
-                                        Country
-                                        {sortBy === "country" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
+                                    <TableHead>Country</TableHead>
                                     <TableHead>First Disaster</TableHead>
-                                    <TableHead onClick={() => handleSort("startDateA")} className="cursor-pointer select-none">
-                                        Date
-                                        {sortBy === "startDateA" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
-                                    <TableHead onClick={() => handleSort("daysBetween")} className="cursor-pointer select-none">
-                                        Days Between
-                                        {sortBy === "daysBetween" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Days Between</TableHead>
                                     <TableHead>Second Disaster</TableHead>
-                                    <TableHead onClick={() => handleSort("startDateB")} className="cursor-pointer select-none">
-                                        Date
-                                        {sortBy === "startDateB" && (sortDirection === "asc" ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
-                                    </TableHead>
+                                    <TableHead>Date</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedCorrelations.length === 0 ? (
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                                                <p>Loading correlations...</p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : error ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center text-red-500 py-8">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <AlertTriangle className="h-8 w-8" />
+                                                <p>Error loading data</p>
+                                                <p className="text-sm">{error}</p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : data.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="text-center text-gray-500 py-8">
                                             <div className="flex flex-col items-center gap-2">
@@ -404,29 +312,29 @@ export function CorrelationsTab() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    paginatedCorrelations.map((correlation) => (
-                                        <TableRow key={correlation.id} className="hover:bg-gray-50">
+                                    data.map((correlation, index) => (
+                                        <TableRow key={index} className="hover:bg-gray-50">
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <MapPin className="h-4 w-4 text-gray-400" />
-                                                    <span className="font-medium">{correlation.country}</span>
+                                                    <span className="font-medium">{correlation.Country}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="space-y-1">
                                                     <Badge
                                                         variant="outline"
-                                                        className={getDisasterTypeColor(correlation.disasterTypeA)}
+                                                        className={getDisasterTypeColor(correlation.DisasterType_A)}
                                                     >
-                                                        {correlation.disasterTypeA}
+                                                        {correlation.DisasterType_A}
                                                     </Badge>
-                                                    <div className="text-sm">{correlation.eventNameA}</div>
+                                                    <div className="text-sm">{correlation.EventName_A}</div>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                                     <Calendar className="h-4 w-4" />
-                                                    {new Date(correlation.startDateA).toLocaleDateString()}
+                                                    {new Date(correlation.StartDate_A).toLocaleDateString()}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -435,12 +343,12 @@ export function CorrelationsTab() {
                                                         variant="outline"
                                                         className="bg-gray-100 text-gray-700 border-gray-200"
                                                     >
-                                                        {correlation.daysBetween === 0 ? (
+                                                        {correlation.Days_Between === 0 ? (
                                                             "Same day"
                                                         ) : (
                                                             <div className="flex items-center gap-1">
                                                                 <Clock className="h-3 w-3" />
-                                                                {correlation.daysBetween} day{correlation.daysBetween === 1 ? "" : "s"}
+                                                                {correlation.Days_Between} day{correlation.Days_Between === 1 ? "" : "s"}
                                                             </div>
                                                         )}
                                                     </Badge>
@@ -450,17 +358,17 @@ export function CorrelationsTab() {
                                                 <div className="space-y-1">
                                                     <Badge
                                                         variant="outline"
-                                                        className={getDisasterTypeColor(correlation.disasterTypeB)}
+                                                        className={getDisasterTypeColor(correlation.DisasterType_B)}
                                                     >
-                                                        {correlation.disasterTypeB}
+                                                        {correlation.DisasterType_B}
                                                     </Badge>
-                                                    <div className="text-sm">{correlation.eventNameB}</div>
+                                                    <div className="text-sm">{correlation.EventName_B}</div>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                                     <Calendar className="h-4 w-4" />
-                                                    {new Date(correlation.startDateB).toLocaleDateString()}
+                                                    {new Date(correlation.StartDate_B).toLocaleDateString()}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -471,10 +379,10 @@ export function CorrelationsTab() {
                     </div>
 
                     {/* Pagination Controls */}
-                    {totalResults > itemsPerPage && (
+                    {totalItems > itemsPerPage && (
                         <div className="flex items-center justify-between pt-4">
                             <div className="text-sm text-gray-500">
-                                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalResults)} of {totalResults} results
+                                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} results
                             </div>
                             <div className="flex gap-2">
                                 <Button
@@ -489,7 +397,7 @@ export function CorrelationsTab() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setCurrentPage(prev => prev + 1)}
-                                    disabled={currentPage * itemsPerPage >= totalResults}
+                                    disabled={currentPage * itemsPerPage >= totalItems}
                                 >
                                     Next
                                 </Button>

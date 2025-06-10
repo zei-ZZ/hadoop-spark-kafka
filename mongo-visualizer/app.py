@@ -38,7 +38,7 @@ db = client["disasterDB"]
 
 @app.route("/anomalies", methods=["GET"])
 def get_anomalies():
-    collection = db["anomalies"]
+collection = db["anomalies"]
     # Define allowed filter fields and their types
     filter_fields = {
         "country": "Country",
