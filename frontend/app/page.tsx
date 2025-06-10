@@ -37,33 +37,73 @@ export default function StreamDashboard() {
   const prevIsLoading = useRef(isLoading)
   const prevEventsLength = useRef(events.length)
 
+  const DismissButton = () => (
+    <button
+      onClick={() => {
+        if (toastId.current) {
+          toast.dismiss(toastId.current)
+        }
+      }}
+      className="bg-transparent border-none p-0 px-2 text-base cursor-pointer hover:opacity-70 transition-opacity"
+    >
+      ×
+    </button>
+  )
+
   useEffect(() => {
     if (isLoading) {
       if (!toastId.current) {
-        toastId.current = toast.loading("Fetching live data...", { id: "live-data-status" })
+        toastId.current = toast.loading("Fetching live data...", {
+          id: "live-data-status",
+          dismissible: true,
+          action: <DismissButton />
+        })
       } else {
-        toast.loading("Fetching live data...", { id: toastId.current })
+        toast.loading("Fetching live data...", {
+          id: toastId.current,
+          dismissible: true,
+          action: <DismissButton />
+        })
       }
     } else if (lastUpdated) {
       // If we just finished loading (transition from loading to not loading)
       if (prevIsLoading.current && !isLoading) {
         // Show temporary success message with event count
-        toast.success(`${events.length} events fetched!`, { duration: 2000 })
+        toast.success(`${events.length} events fetched!`, {
+          duration: 2000,
+          dismissible: true
+        })
 
         // After a delay, update to the persistent live data status
         setTimeout(() => {
           if (toastId.current) {
-            toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), { id: toastId.current })
+            toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), {
+              id: toastId.current,
+              dismissible: true,
+              action: <DismissButton />
+            })
           } else {
-            toastId.current = toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), { id: "live-data-status" })
+            toastId.current = toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), {
+              id: "live-data-status",
+              dismissible: true,
+              action: <DismissButton />
+            })
           }
         }, 2000)
       } else if (events.length !== prevEventsLength.current) {
         // If events count changed but we weren't loading, just update the persistent status
         if (toastId.current) {
-          toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), { id: toastId.current })
+          toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), {
+            id: toastId.current,
+            dismissible: true,
+            action: <DismissButton />
+          })
         } else {
-          toastId.current = toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), { id: "live-data-status" })
+          toastId.current = toast.success("Live data – Last updated: " + lastUpdated.toLocaleString(), {
+            id: "live-data-status",
+            dismissible: true,
+            action: <DismissButton />
+          })
         }
       }
     }
