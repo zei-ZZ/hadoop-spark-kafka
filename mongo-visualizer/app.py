@@ -90,5 +90,65 @@ def get_anomalies():
         }
     })
 
+@app.route("/firehotspots", methods=["GET"])
+def get_fire_hotspots():
+    collection = db["fire-hotspots"]
+    
+    # Get top 5 countries by rank
+    cursor = collection.find({}, {"_id": 0}).sort("Rank", 1).limit(5)
+    results = list(cursor)
+
+    return jsonify({
+        "results": results
+    })
+
+@app.route("/earthquakehotspots", methods=["GET"])
+def get_earthquake_hotspots():
+    collection = db["earthquake-hotspots"]
+    
+    # Get top 5 countries by rank
+    cursor = collection.find({}, {"_id": 0}).sort("Rank", 1).limit(5)
+    results = list(cursor)
+
+    return jsonify({
+        "results": results
+    })
+
+@app.route("/floodhotspots", methods=["GET"])
+def get_flood_hotspots():
+    collection = db["flood-hotspots"]
+    
+    # Get top 5 countries by rank
+    cursor = collection.find({}, {"_id": 0}).sort("Rank", 1).limit(5)
+    results = list(cursor)
+
+    return jsonify({
+        "results": results
+    })
+
+@app.route("/stormhotspots", methods=["GET"])
+def get_storm_hotspots():
+    collection = db["storm-hotspots"]
+    
+    # Get top 5 countries by rank
+    cursor = collection.find({}, {"_id": 0}).sort("Rank", 1).limit(5)
+    results = list(cursor)
+
+    return jsonify({
+        "results": results
+    })
+
+@app.route("/volcanohotspots", methods=["GET"])
+def get_volcano_hotspots():
+    collection = db["volcano-hotspots"]
+    
+    # Get top 5 countries by rank
+    cursor = collection.find({}, {"_id": 0}).sort("Rank", 1).limit(5)
+    results = list(cursor)
+
+    return jsonify({
+        "results": results
+    })
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
